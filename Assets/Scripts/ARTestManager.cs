@@ -36,34 +36,42 @@ public class ARTestManager : MonoBehaviour
 
     private void OnPlaneAdded(PlaneAddedEventArgs eventArgs)
     {
-        Debug.LogErrorFormat("[OnPlaneAdded] TrackableId:{0}, Pose position:{1}, Pose rotate:{2}",
-                                eventArgs.Plane.Id.ToString(), 
+        Debug.LogErrorFormat("[OnPlaneAdded] TrackableId:{0}, Center:{1},  Pose position:{2}, Pose rotate:{3}",
+                                eventArgs.Plane.Id.ToString(),
+                                eventArgs.Plane.Center,
                                 eventArgs.Plane.Pose.position,
                                 eventArgs.Plane.Pose.rotation.eulerAngles);
     }
 
     private void OnPlaneUpdated(PlaneUpdatedEventArgs eventArgs)
     {
-        Debug.LogErrorFormat("[OnPlaneUpdated] TrackableId:{0}, Pose position:{1}, Pose rotate:{2}",
+        Debug.LogErrorFormat("[OnPlaneUpdated] TrackableId:{0}, Center:{1},  Pose position:{2}, Pose rotate:{3}",
                                 eventArgs.Plane.Id.ToString(),
+                                eventArgs.Plane.Center,
                                 eventArgs.Plane.Pose.position,
                                 eventArgs.Plane.Pose.rotation.eulerAngles);
 
+        Vector3 position = eventArgs.Plane.Pose.position;
         Vector3 angle = eventArgs.Plane.Pose.rotation.eulerAngles;
-        if (Mathf.Abs(angle.x) > 20 ||
-            Mathf.Abs(angle.y) > 20 ||
+        if (Mathf.Abs(position.y) > 20 || 
+            Mathf.Abs(angle.x) > 20 ||
             Mathf.Abs(angle.z) > 20)
         {
             return;
         }
 
-        SetTarget(eventArgs.Plane.Center);
+
+        Vector3 cameraForward = ARSubsystemManager.cameraSubsystem.Camera.transform.forward;
+        Vector3 cameraBearing = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
+
+        SetTarget(position, Quaternion.LookRotation(cameraBearing));
     }
 
     private void OnPlaneRemoved(PlaneRemovedEventArgs eventArgs)
     {
-        Debug.LogErrorFormat("[OnPlaneRemoved] TrackableId:{0}, Pose position:{1}, Pose rotate:{2}",
+        Debug.LogErrorFormat("[OnPlaneRemoved] TrackableId:{0}, Center:{1},  Pose position:{2}, Pose rotate:{3}",
                                 eventArgs.Plane.Id.ToString(),
+                                eventArgs.Plane.Center,
                                 eventArgs.Plane.Pose.position,
                                 eventArgs.Plane.Pose.rotation.eulerAngles);
     }
@@ -75,12 +83,12 @@ public class ARTestManager : MonoBehaviour
 
 
 
-    private void SetTarget(Vector3 position)
+    private void SetTarget(Vector3 position, Quaternion rotation)
     {
         if (target != null)
         {
             target.SetParent(m_SessionOrigin.trackablesParent);
-            target.position = position;
+            target.SetPositionAndRotation(position, rotation);
 
             target.gameObject.SetActive(true);
         }
