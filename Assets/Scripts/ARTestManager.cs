@@ -7,13 +7,17 @@ using UnityEngine.XR.ARFoundation;
 public class ARTestManager : MonoBehaviour 
 {
     public Transform target;
+    public GameObject placementIndicator;
 
 
-    ARSessionOrigin m_SessionOrigin;
+    private ARSessionOrigin m_sessionOrigin;
+    private Pose m_placementPose;
+    private bool m_placementPoseIsValid = false;
+
 
     private void Awake()
     {
-        m_SessionOrigin = GetComponent<ARSessionOrigin>();
+        m_sessionOrigin = GetComponent<ARSessionOrigin>();
     }
 
     private void OnEnable()
@@ -30,6 +34,67 @@ public class ARTestManager : MonoBehaviour
         ARSubsystemManager.planeUpdated -= OnPlaneUpdated;
         ARSubsystemManager.planeRemoved -= OnPlaneRemoved;
         ARSubsystemManager.sessionDestroyed -= OnSessionDestroyed;
+    }
+
+    private void Update()
+    {
+        UpdatePlacementIndicator();
+        UpdatePlacementPose();
+
+        if (m_placementPoseIsValid &&
+            Input.touchCount > 0 &&
+            Input.GetTouch(0).phase == TouchPhase.Began)
+        {
+            SetTarget(m_placementPose.position, m_placementPose.rotation);
+        }
+    }
+
+    private void UpdatePlacementIndicator()
+    {
+        if (m_placementPoseIsValid)
+        {
+            placementIndicator.SetActive(true);
+            placementIndicator.transform.SetPositionAndRotation(m_placementPose.position, m_placementPose.rotation);
+        }
+        else
+        {
+            placementIndicator.SetActive(false);
+        }
+    }
+
+    private void UpdatePlacementPose()
+    {
+        var screenCenter = m_sessionOrigin.camera.ViewportToScreenPoint(new Vector3(0.5f, 0.5f));
+        var hits = new List<ARRaycastHit>();
+        m_sessionOrigin.Raycast(screenCenter, hits, TrackableType.Planes);
+
+        m_placementPoseIsValid = hits.Count > 0;
+        if (m_placementPoseIsValid)
+        {
+            m_placementPose = hits[0].pose;
+
+            Debug.LogErrorFormat("[PlaneHits] TrackableId:{0}, Pose position:{1}, Pose rotate:{2}, Distance:{3}, Relative Pose position:{4}, Relative Pose rotate:{5}, Relative Distance:{6}",
+                                hits[0].trackableId.ToString(),
+                                hits[0].pose.position,
+                                hits[0].pose.rotation.eulerAngles,
+                                hits[0].distance,
+                                hits[0].sessionRelativePose.position,
+                                hits[0].sessionRelativePose.rotation.eulerAngles,
+                                hits[0].sessionRelativeDistance);
+
+            Vector3 angle = m_placementPose.rotation.eulerAngles;
+            if (Mathf.Abs(angle.x) > 20 ||
+                Mathf.Abs(angle.z) > 20)
+            {
+                m_placementPoseIsValid = false;
+                return;
+            }
+
+
+            var cameraForward = m_sessionOrigin.camera.transform.forward;
+            var cameraBearing = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
+            m_placementPose.rotation = Quaternion.LookRotation(cameraBearing);
+        }
     }
 
 
@@ -50,21 +115,6 @@ public class ARTestManager : MonoBehaviour
                                 eventArgs.Plane.Center,
                                 eventArgs.Plane.Pose.position,
                                 eventArgs.Plane.Pose.rotation.eulerAngles);
-
-        Vector3 position = eventArgs.Plane.Pose.position;
-        Vector3 angle = eventArgs.Plane.Pose.rotation.eulerAngles;
-        if (Mathf.Abs(position.y) > 20 || 
-            Mathf.Abs(angle.x) > 20 ||
-            Mathf.Abs(angle.z) > 20)
-        {
-            return;
-        }
-
-
-        Vector3 cameraForward = ARSubsystemManager.cameraSubsystem.Camera.transform.forward;
-        Vector3 cameraBearing = new Vector3(cameraForward.x, 0, cameraForward.z).normalized;
-
-        SetTarget(position, Quaternion.LookRotation(cameraBearing));
     }
 
     private void OnPlaneRemoved(PlaneRemovedEventArgs eventArgs)
@@ -87,7 +137,7 @@ public class ARTestManager : MonoBehaviour
     {
         if (target != null)
         {
-            target.SetParent(m_SessionOrigin.trackablesParent);
+            target.SetParent(m_sessionOrigin.trackablesParent);
             target.SetPositionAndRotation(position, rotation);
 
             target.gameObject.SetActive(true);
