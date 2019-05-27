@@ -8,4 +8,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/ARTest.unity
     guid: 2e61edf68bb584045927b751e7a28c6f
-  m_configObjects: {}
+  m_configObjects:
+    com.unity.xr.arcore.PlayerSettings: {fileID: 11400000, guid: 7c09e81fcbbf0164eb53b1959d5b5f91,
+      type: 2}
