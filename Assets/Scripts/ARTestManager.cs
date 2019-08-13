@@ -36,6 +36,26 @@ public class ARTestManager : MonoBehaviour
         m_arPlaneManager.planesChanged -= OnPlanesChanged;
     }
 
+    private void OnPlanesChanged(ARPlanesChangedEventArgs eventArgs)
+    {
+        ShowARPlanesLog("ARPlanes added", eventArgs.added);
+        ShowARPlanesLog("ARPlanes removed", eventArgs.removed);
+        ShowARPlanesLog("ARPlanes updated", eventArgs.updated);
+    }
+    private void ShowARPlanesLog(string title, List<ARPlane> planes)
+    {
+        for (int i = 0; i < planes.Count; i++)
+        {
+            Debug.LogErrorFormat("[{0}] TrackableId:{1}, Center:{2}, position:{3}, rotate:{4}",
+                                title,
+                                planes[i].trackableId.ToString(),
+                                planes[i].center,
+                                planes[i].transform.position,
+                                planes[i].transform.eulerAngles);
+        }
+    }
+
+
     private void Update()
     {
         UpdatePlacementIndicator();
@@ -96,27 +116,6 @@ public class ARTestManager : MonoBehaviour
             m_placementPose.rotation = Quaternion.LookRotation(cameraBearing);
         }
     }
-
-
-    private void OnPlanesChanged(ARPlanesChangedEventArgs eventArgs)
-    {
-        ShowARPlanesLog("ARPlanes added", eventArgs.added);
-        ShowARPlanesLog("ARPlanes removed", eventArgs.removed);
-        ShowARPlanesLog("ARPlanes updated", eventArgs.updated);
-    }
-    private void ShowARPlanesLog(string title, List<ARPlane> planes)
-    {
-        for (int i = 0; i < planes.Count; i++)
-        {
-            Debug.LogErrorFormat("[{0}] TrackableId:{1}, Center:{2}, position:{3}, rotate:{4}",
-                                title,
-                                planes[i].trackableId.ToString(),
-                                planes[i].center,
-                                planes[i].transform.position,
-                                planes[i].transform.eulerAngles);
-        }
-    }
-
 
     private void SetTarget(Vector3 position, Quaternion rotation)
     {
