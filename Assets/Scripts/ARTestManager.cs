@@ -14,26 +14,26 @@ public class ARTestManager : MonoBehaviour
     private Pose m_placementPose;
     private bool m_placementPoseIsValid = false;
 
+    private ARPlaneManager m_arPlaneManager;
+    private ARRaycastManager m_arRaycastManager;
+    private List<ARRaycastHit> m_hitResults;
+
 
     private void Awake()
     {
-        m_sessionOrigin = GetComponent<ARSessionOrigin>();
+        m_sessionOrigin = this.GetComponent<ARSessionOrigin>();
+        m_arPlaneManager = this.GetComponent<ARPlaneManager>();
+        m_arRaycastManager = this.GetComponent<ARRaycastManager>();
     }
 
     private void OnEnable()
     {
-        ARSubsystemManager.planeAdded += OnPlaneAdded;
-        ARSubsystemManager.planeUpdated += OnPlaneUpdated;
-        ARSubsystemManager.planeRemoved += OnPlaneRemoved;
-        ARSubsystemManager.sessionDestroyed += OnSessionDestroyed;
+        m_arPlaneManager.planesChanged += OnPlanesChanged;
     }
 
     private void OnDisable()
     {
-        ARSubsystemManager.planeAdded -= OnPlaneAdded;
-        ARSubsystemManager.planeUpdated -= OnPlaneUpdated;
-        ARSubsystemManager.planeRemoved -= OnPlaneRemoved;
-        ARSubsystemManager.sessionDestroyed -= OnSessionDestroyed;
+        m_arPlaneManager.planesChanged -= OnPlanesChanged;
     }
 
     private void Update()
@@ -98,39 +98,24 @@ public class ARTestManager : MonoBehaviour
     }
 
 
-
-    private void OnPlaneAdded(PlaneAddedEventArgs eventArgs)
+    private void OnPlanesChanged(ARPlanesChangedEventArgs eventArgs)
     {
-        Debug.LogErrorFormat("[OnPlaneAdded] TrackableId:{0}, Center:{1},  Pose position:{2}, Pose rotate:{3}",
-                                eventArgs.Plane.Id.ToString(),
-                                eventArgs.Plane.Center,
-                                eventArgs.Plane.Pose.position,
-                                eventArgs.Plane.Pose.rotation.eulerAngles);
+        ShowARPlanesLog("ARPlanes added", eventArgs.added);
+        ShowARPlanesLog("ARPlanes removed", eventArgs.removed);
+        ShowARPlanesLog("ARPlanes updated", eventArgs.updated);
     }
-
-    private void OnPlaneUpdated(PlaneUpdatedEventArgs eventArgs)
+    private void ShowARPlanesLog(string title, List<ARPlane> planes)
     {
-        Debug.LogErrorFormat("[OnPlaneUpdated] TrackableId:{0}, Center:{1},  Pose position:{2}, Pose rotate:{3}",
-                                eventArgs.Plane.Id.ToString(),
-                                eventArgs.Plane.Center,
-                                eventArgs.Plane.Pose.position,
-                                eventArgs.Plane.Pose.rotation.eulerAngles);
+        for (int i = 0; i < planes.Count; i++)
+        {
+            Debug.LogErrorFormat("[{0}] TrackableId:{1}, Center:{2}, position:{3}, rotate:{4}",
+                                title,
+                                planes[i].trackableId.ToString(),
+                                planes[i].center,
+                                planes[i].transform.position,
+                                planes[i].transform.eulerAngles);
+        }
     }
-
-    private void OnPlaneRemoved(PlaneRemovedEventArgs eventArgs)
-    {
-        Debug.LogErrorFormat("[OnPlaneRemoved] TrackableId:{0}, Center:{1},  Pose position:{2}, Pose rotate:{3}",
-                                eventArgs.Plane.Id.ToString(),
-                                eventArgs.Plane.Center,
-                                eventArgs.Plane.Pose.position,
-                                eventArgs.Plane.Pose.rotation.eulerAngles);
-    }
-
-    private void OnSessionDestroyed()
-    {
-        Debug.LogError("OnSessionDestroyed");
-    }
-
 
 
     private void SetTarget(Vector3 position, Quaternion rotation)
