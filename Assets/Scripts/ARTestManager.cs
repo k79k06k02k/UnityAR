@@ -66,7 +66,7 @@ public class ARTestManager : MonoBehaviour
     {
         var screenCenter = m_sessionOrigin.camera.ViewportToScreenPoint(new Vector3(0.5f, 0.5f));
         var hits = new List<ARRaycastHit>();
-        m_sessionOrigin.Raycast(screenCenter, hits, TrackableType.Planes);
+        m_arRaycastManager.Raycast(screenCenter, hits, UnityEngine.XR.ARSubsystems.TrackableType.Planes);
 
         m_placementPoseIsValid = hits.Count > 0;
         if (m_placementPoseIsValid)
